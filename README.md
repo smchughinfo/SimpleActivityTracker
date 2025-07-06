@@ -14,6 +14,7 @@ The simplest possible web application for activity tracking.
 - **Data Visualization**: Interactive charts showing activity patterns
 - **Session-Based**: No signup required - use session IDs for data persistence
 - **Multi-Device**: Share session IDs to access data across devices
+- **Data Export**: Copy all of your data to clipboard for easy export
 
 ## Technology Stack
 - **Frontend**: React, Bootstrap, ApexCharts

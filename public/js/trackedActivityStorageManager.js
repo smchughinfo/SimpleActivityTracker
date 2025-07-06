@@ -1,33 +1,65 @@
 var trackedActivityStorageManager = (function() {
-  function getTrackedActivities() {
-    return localStorage.trackedActivities ? JSON.parse(localStorage.trackedActivities) : [];
+  async function getTrackedActivities() {
+    try {
+      const response = await fetch('/api/tracked-activities');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching tracked activities:', error);
+      return [];
+    }
   }
   
-  function addTrackedActivity(trackedActivity) {
-    let trackedActivities = getTrackedActivities();
-    trackedActivities.push(trackedActivity);
-
-    trackedActivities.sort(function(a, b) {
-      return b.activityTime - a.activityTime;
-    });
-
-    setTrackedActivities(trackedActivities);
+  async function addTrackedActivity(trackedActivity) {
+    try {
+      const response = await fetch('/api/tracked-activities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(trackedActivity)
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error adding tracked activity:', error);
+      throw error;
+    }
   }
   
-  function setTrackedActivities(trackedActivities) {
-    localStorage.trackedActivities = JSON.stringify(trackedActivities);
+  async function setTrackedActivities(trackedActivities) {
+    try {
+      const response = await fetch('/api/tracked-activities', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(trackedActivities)
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error setting tracked activities:', error);
+      throw error;
+    }
   }
 
-  function deleteTrackedActivity(trackedActivity) {
-    var trackedActivities = getTrackedActivities();
-    var trackedActivitiesByLogTime = trackedActivities.map(t => t.logTime);
-    var trackedActivityIndex = trackedActivitiesByLogTime.indexOf(trackedActivity.logTime);
-    trackedActivities.splice(trackedActivityIndex, 1);
-    setTrackedActivities(trackedActivities);
+  async function deleteTrackedActivity(trackedActivity) {
+    try {
+      const response = await fetch(`/api/tracked-activities/${trackedActivity.logTime}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error deleting tracked activity:', error);
+      throw error;
+    }
   }
 
-  function toString() {
-    return localStorage.trackedActivities ? localStorage.trackedActivities : "";
+  async function toString() {
+    let trackedActivities = await getTrackedActivities();
+    return trackedActivities ? JSON.stringify(trackedActivities) : "";
   }
 
   return {

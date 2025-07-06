@@ -126,12 +126,13 @@ function AddActivityDialog(props) {
   );
 }
 
-function getUniqueTags() {
-  return [...new Set(activityStorageManager.getActivities().map(activity => activity.tag))]; // https://stackoverflow.com/a/35092559
+async function getUniqueTags() {
+  const activities = await activityStorageManager.getActivities();
+  return [...new Set(activities.map(activity => activity.tag))]; // https://stackoverflow.com/a/35092559
 }
 
 function ActivityTabs(props) {
-  let tags = getUniqueTags()
+  let tags = [...new Set(props.activities.map(activity => activity.tag))];
   let groupedActivities = tags.map(tag => props.activities.filter(activity => activity.tag == tag));
   let activeActivity = tags[0];
 
@@ -148,47 +149,6 @@ function ActivityTabs(props) {
   );
 }
 
-var activityStorageManager = (function() {
-  function getActivities() {
-    return localStorage.activities ? JSON.parse(localStorage.activities) : [
-      { name: "Play with dog", tag: "Dog Watching"},
-      { name: "Stare at dog", tag: "Dog Watching"},
-      { name: "Pet dog", tag: "Dog Watching"},
-      { name: "Apple", tag: "Eating"},
-      { name: "Frosting", tag: "Eating"},
-    ];
-  }
-  
-  function addActivity(activity) {
-    let activities = getActivities();
-    activities.push(activity);
-    setActivities(activities);
-  }
-  
-  function setActivities(activities) {
-    localStorage.activities = JSON.stringify(activities);
-  }
-
-  function deleteActivity(activity) {
-    var activities = getActivities();
-    var activitiesConcat = activities.map(a => a.name + a.tag);
-    var activityIndex = activitiesConcat.indexOf(activity.name + activity.tag);
-    activities.splice(activityIndex, 1);
-    setActivities(activities);
-  }
-
-  function toString() {
-    return localStorage.activities ? localStorage.activities : "";
-  }
-
-  return {
-    getActivities: getActivities,
-    addActivity: addActivity,
-    setActivities: setActivities,
-    deleteActivity: deleteActivity,
-    toString: toString
-  }
-})();
 
 
 function ActivityListItem(props) {
@@ -224,8 +184,10 @@ function TrackedActivityListItem(props) {
 function TrackedActivityList(props) {
   React.useEffect(chartManager.createOrUpdateChart);
 
-  function copyActivityLogToClipboard() {
-    var activityLog = activityStorageManager.toString() + "\n\n\n" + trackedActivityStorageManager.toString();
+  async function copyActivityLogToClipboard() {
+    var activitiesLog = await activityStorageManager.toString();
+    var trackedActivitiesLog = await trackedActivityStorageManager.toString();
+    var activityLog = activitiesLog + "\n\n\n" + trackedActivitiesLog;
     navigator.clipboard.writeText(activityLog);
   }
 
@@ -302,13 +264,13 @@ var chartManager = (function() {
     return (new Date().getTimezoneOffset()) * 1000 * 60;
   }
 
-  function getSeries() {
-    var trackedActivities = trackedActivityStorageManager.getTrackedActivities();
+  async function getSeries() {
+    var trackedActivities = await trackedActivityStorageManager.getTrackedActivities();
     var oneDayMilliseconds = 1000 * 60 * 60 * 24;
     var yesterday = Date.now() - oneDayMilliseconds;
     trackedActivities = trackedActivities.filter(a => a.activityTime > yesterday);
     var gmt = getTimezoneOffsetInMilliseconds();
-    var uniqueTags = getUniqueTags();
+    var uniqueTags = await getUniqueTags();
     var series = [];
   
     for(var i = 0; i < uniqueTags.length; i++) {
@@ -334,8 +296,9 @@ var chartManager = (function() {
 
 
   var lastSeries = null;
-  function getChartOptions() {
-    lastSeries = getSeries();
+  async function getChartOptions() {
+    var uniqueTags = await getUniqueTags();
+    lastSeries = await getSeries();
     var options = {
       series: lastSeries,
       chart: {
@@ -364,7 +327,7 @@ var chartManager = (function() {
       type: 'datetime',
     },
     yaxis: {
-      max: getUniqueTags().length
+      max: uniqueTags.length
     },
     tooltip: {
       x: {
@@ -401,23 +364,23 @@ var chartManager = (function() {
     return result;
   }
 
-  function createChart() {
-    var options = getChartOptions();
+  async function createChart() {
+    var options = await getChartOptions();
     window.chart = new ApexCharts(document.querySelector("#myChart"), options);
     chart.render();
   }
 
-   function updateChart() {
-     var options = getChartOptions();
+   async function updateChart() {
+     var options = await getChartOptions();
      chart.updateOptions(options, true);
    }
 
-   function createOrUpdateChart() {
+   async function createOrUpdateChart() {
      if(window.chart == undefined) {
-       createChart();
+       await createChart();
      }
      else {
-       updateChart();
+       await updateChart();
      }
    }
 
@@ -429,9 +392,21 @@ var chartManager = (function() {
 
 
 function SAT(props) {
-  const [activities, setActivities] = React.useState(activityStorageManager.getActivities());
+  const [activities, setActivities] = React.useState([]);
   const [curActivity, setCurActivity] = React.useState(null);
-  const [trackedActivities, setTrackedActivities] = React.useState(trackedActivityStorageManager.getTrackedActivities());
+  const [trackedActivities, setTrackedActivities] = React.useState([]);
+
+  // Load activities and tracked activities on component mount
+  React.useEffect(() => {
+    async function loadData() {
+      const activitiesData = await activityStorageManager.getActivities();
+      setActivities(activitiesData);
+      
+      const trackedData = await trackedActivityStorageManager.getTrackedActivities();
+      setTrackedActivities(trackedData);
+    }
+    loadData();
+  }, []);
 
   function showAddActivityDialog() {
     $("#newActivityName").val("");
@@ -439,12 +414,12 @@ function SAT(props) {
     $('#addActivityDialog').modal('show');
   }
 
-  function addActivity(result) {
+  async function addActivity(result) {
     $('#addActivityDialog').modal('hide');
     var isValid = result.name.replaceAll(" ", "") !== "" && result.tag.replaceAll(" ", "") !== "";
     if(isValid) {
-      activityStorageManager.addActivity(result);
-      setActivities(activityStorageManager.getActivities());
+      await activityStorageManager.addActivity(result);
+      setActivities(await activityStorageManager.getActivities());
     }
   }
 
@@ -455,23 +430,23 @@ function SAT(props) {
     $("#trackActivityDialog").modal('show');
   }
 
-  function trackActivity(tMinusMilliseconds) {
+  async function trackActivity(tMinusMilliseconds) {
     var trackedActivity = JSON.parse(JSON.stringify(curActivity));
     trackedActivity.logTime = Date.now();
     trackedActivity.activityTime = Date.now() - tMinusMilliseconds;
-    trackedActivityStorageManager.addTrackedActivity(trackedActivity);
-    setTrackedActivities(trackedActivityStorageManager.getTrackedActivities());
+    await trackedActivityStorageManager.addTrackedActivity(trackedActivity);
+    setTrackedActivities(await trackedActivityStorageManager.getTrackedActivities());
     $("#trackActivityDialog").modal('hide');
   }
 
-  function deleteTrackedActivity(trackedActivity) {
-    trackedActivityStorageManager.deleteTrackedActivity(trackedActivity);
-    setTrackedActivities(trackedActivityStorageManager.getTrackedActivities());
+  async function deleteTrackedActivity(trackedActivity) {
+    await trackedActivityStorageManager.deleteTrackedActivity(trackedActivity);
+    setTrackedActivities(await trackedActivityStorageManager.getTrackedActivities());
   }
 
-  function deleteActivity(activity) {
-    activityStorageManager.deleteActivity(activity);
-    setActivities(activityStorageManager.getActivities());
+  async function deleteActivity(activity) {
+    await activityStorageManager.deleteActivity(activity);
+    setActivities(await activityStorageManager.getActivities());
   }
   
   return (

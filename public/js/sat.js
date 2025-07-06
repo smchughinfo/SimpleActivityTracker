@@ -391,6 +391,56 @@ var chartManager = (function() {
 
 
 
+function SessionInfo(props) {
+  const [sessionInputValue, setSessionInputValue] = React.useState('');
+  const [currentSessionId, setCurrentSessionId] = React.useState(sessionManager.getSessionId());
+
+  function loadSession() {
+    if (sessionInputValue.trim()) {
+      sessionManager.loadSession(sessionInputValue.trim());
+    }
+  }
+
+  function handleKeyPress(e) {
+    if (e.key === 'Enter') {
+      loadSession();
+    }
+  }
+
+  React.useEffect(() => {
+    sessionManager.updateSessionDisplay = () => {
+      setCurrentSessionId(sessionManager.getSessionId());
+    };
+  }, []);
+
+  return (
+    <div id="sessionInfo" style={{ marginBottom: '1em', padding: '10px', backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '5px' }}>
+      <div className="row">
+        <div className="col-md-6">
+          <strong>Your Session ID:</strong> <span id="sessionDisplay" style={{ fontFamily: 'monospace', fontSize: '0.9em' }}>{currentSessionId || 'Demo Session'}</span>
+          <br />
+          <small className="text-muted">Email this ID to yourself to access your data on other devices</small>
+        </div>
+        <div className="col-md-6">
+          <div className="input-group input-group-sm">
+            <input 
+              type="text" 
+              className="form-control" 
+              placeholder="Paste session ID to load different session" 
+              value={sessionInputValue}
+              onChange={(e) => setSessionInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <div className="input-group-append">
+              <button className="btn btn-outline-secondary" type="button" onClick={loadSession}>Load</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SAT(props) {
   const [activities, setActivities] = React.useState([]);
   const [curActivity, setCurActivity] = React.useState(null);
@@ -399,6 +449,7 @@ function SAT(props) {
   // Load activities and tracked activities on component mount
   React.useEffect(() => {
     async function loadData() {
+      sessionManager.updateSessionDisplay();
       const activitiesData = await activityStorageManager.getActivities();
       setActivities(activitiesData);
       
@@ -450,11 +501,14 @@ function SAT(props) {
   }
   
   return (
-    <div className="card" id="activityTabs">
-      <ActivityTabs activities={activities} showAddActivityDialog={showAddActivityDialog} showTrackActivityDialog={showTrackActivityDialog} />
-      <AddActivityDialog onAddActivity={addActivity} />
-      <ActivityInfoDialog curActivity={curActivity} onTrackActivity={trackActivity} />
-      <TrackedActivityList activities={activities} trackedActivities={trackedActivities} onDeleteActivity={deleteActivity} onDeleteTrackedActivity={deleteTrackedActivity} />
+    <div>
+      <SessionInfo />
+      <div className="card" id="activityTabs">
+        <ActivityTabs activities={activities} showAddActivityDialog={showAddActivityDialog} showTrackActivityDialog={showTrackActivityDialog} />
+        <AddActivityDialog onAddActivity={addActivity} />
+        <ActivityInfoDialog curActivity={curActivity} onTrackActivity={trackActivity} />
+        <TrackedActivityList activities={activities} trackedActivities={trackedActivities} onDeleteActivity={deleteActivity} onDeleteTrackedActivity={deleteTrackedActivity} />
+      </div>
     </div>
   );
 }

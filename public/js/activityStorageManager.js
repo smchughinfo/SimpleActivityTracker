@@ -1,7 +1,9 @@
 var activityStorageManager = (function() {
   async function getActivities() {
     try {
-      const response = await fetch('/api/activities');
+      const sessionId = sessionManager.getSessionId();
+      const url = sessionId ? `/api/activities?sessionId=${sessionId}` : '/api/activities';
+      const response = await fetch(url);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -12,12 +14,14 @@ var activityStorageManager = (function() {
   
   async function addActivity(activity) {
     try {
+      const sessionId = sessionManager.ensureSessionId();
+      const payload = { ...activity, sessionId };
       const response = await fetch('/api/activities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(activity)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       return data;
@@ -29,12 +33,14 @@ var activityStorageManager = (function() {
   
   async function setActivities(activities) {
     try {
+      const sessionId = sessionManager.ensureSessionId();
+      const payload = { activities, sessionId };
       const response = await fetch('/api/activities', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(activities)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       return data;
@@ -46,7 +52,11 @@ var activityStorageManager = (function() {
 
   async function deleteActivity(activity) {
     try {
-      const response = await fetch(`/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}`, {
+      const sessionId = sessionManager.ensureSessionId();
+      const url = sessionId ? 
+        `/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}?sessionId=${sessionId}` :
+        `/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}`;
+      const response = await fetch(url, {
         method: 'DELETE'
       });
       const data = await response.json();

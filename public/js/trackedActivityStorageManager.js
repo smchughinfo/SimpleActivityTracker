@@ -1,7 +1,9 @@
 var trackedActivityStorageManager = (function() {
   async function getTrackedActivities() {
     try {
-      const response = await fetch('/api/tracked-activities');
+      const sessionId = sessionManager.getSessionId();
+      const url = sessionId ? `/api/tracked-activities?sessionId=${sessionId}` : '/api/tracked-activities';
+      const response = await fetch(url);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -12,12 +14,14 @@ var trackedActivityStorageManager = (function() {
   
   async function addTrackedActivity(trackedActivity) {
     try {
+      const sessionId = sessionManager.ensureSessionId();
+      const payload = { ...trackedActivity, sessionId };
       const response = await fetch('/api/tracked-activities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(trackedActivity)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       return data;
@@ -29,12 +33,14 @@ var trackedActivityStorageManager = (function() {
   
   async function setTrackedActivities(trackedActivities) {
     try {
+      const sessionId = sessionManager.ensureSessionId();
+      const payload = { trackedActivities, sessionId };
       const response = await fetch('/api/tracked-activities', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(trackedActivities)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       return data;
@@ -46,7 +52,11 @@ var trackedActivityStorageManager = (function() {
 
   async function deleteTrackedActivity(trackedActivity) {
     try {
-      const response = await fetch(`/api/tracked-activities/${trackedActivity.logTime}`, {
+      const sessionId = sessionManager.ensureSessionId();
+      const url = sessionId ? 
+        `/api/tracked-activities/${trackedActivity.logTime}?sessionId=${sessionId}` :
+        `/api/tracked-activities/${trackedActivity.logTime}`;
+      const response = await fetch(url, {
         method: 'DELETE'
       });
       const data = await response.json();

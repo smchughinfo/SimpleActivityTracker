@@ -14,19 +14,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API endpoints for activities
 app.get('/api/activities', (req, res) => {
-  res.json(activityService.getActivities());
+  const sessionId = req.query.sessionId;
+  res.json(activityService.getActivities(sessionId));
 });
 
 app.post('/api/activities', (req, res) => {
+  const sessionId = req.body.sessionId;
   const activity = req.body;
-  const result = activityService.addActivity(activity);
+  delete activity.sessionId; // Remove sessionId from activity data
+  const result = activityService.addActivity(sessionId, activity);
   res.json(result);
 });
 
 app.delete('/api/activities/:name/:tag', (req, res) => {
   const name = decodeURIComponent(req.params.name);
   const tag = decodeURIComponent(req.params.tag);
-  const deleted = activityService.deleteActivity(name, tag);
+  const sessionId = req.query.sessionId;
+  const deleted = activityService.deleteActivity(sessionId, name, tag);
   
   if (deleted) {
     res.json(deleted);
@@ -36,24 +40,30 @@ app.delete('/api/activities/:name/:tag', (req, res) => {
 });
 
 app.put('/api/activities', (req, res) => {
-  const result = activityService.setActivities(req.body);
+  const sessionId = req.body.sessionId;
+  const activities = req.body.activities || req.body; // Support both formats
+  const result = activityService.setActivities(sessionId, activities);
   res.json(result);
 });
 
 // API endpoints for tracked activities
 app.get('/api/tracked-activities', (req, res) => {
-  res.json(trackedActivityService.getTrackedActivities());
+  const sessionId = req.query.sessionId;
+  res.json(trackedActivityService.getTrackedActivities(sessionId));
 });
 
 app.post('/api/tracked-activities', (req, res) => {
+  const sessionId = req.body.sessionId;
   const trackedActivity = req.body;
-  const result = trackedActivityService.addTrackedActivity(trackedActivity);
+  delete trackedActivity.sessionId; // Remove sessionId from activity data
+  const result = trackedActivityService.addTrackedActivity(sessionId, trackedActivity);
   res.json(result);
 });
 
 app.delete('/api/tracked-activities/:logTime', (req, res) => {
   const logTime = parseInt(req.params.logTime);
-  const deleted = trackedActivityService.deleteTrackedActivity(logTime);
+  const sessionId = req.query.sessionId;
+  const deleted = trackedActivityService.deleteTrackedActivity(sessionId, logTime);
   
   if (deleted) {
     res.json(deleted);
@@ -63,7 +73,9 @@ app.delete('/api/tracked-activities/:logTime', (req, res) => {
 });
 
 app.put('/api/tracked-activities', (req, res) => {
-  const result = trackedActivityService.setTrackedActivities(req.body);
+  const sessionId = req.body.sessionId;
+  const trackedActivities = req.body.trackedActivities || req.body; // Support both formats
+  const result = trackedActivityService.setTrackedActivities(sessionId, trackedActivities);
   res.json(result);
 });
 

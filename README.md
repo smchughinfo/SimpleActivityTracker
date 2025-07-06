@@ -33,4 +33,4 @@ Simple session-based storage without authentication. Each session gets isolated 
 
 ## 🤖 Claude Code
 
-- **Sped Up** This was just a static page for years. I wrote this to learn React. In one night Claude Code added the node.js backend for me and helped me get it setup on [www.simpleactivitytracker.app](https://www.simpleactivitytracker.app).
+- **Sped Up** This was just a serverless page for years. I wrote this to learn React. In one night Claude Code added the node.js backend for me and helped me get it setup on [www.simpleactivitytracker.app](https://www.simpleactivitytracker.app).

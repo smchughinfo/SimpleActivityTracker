@@ -20,7 +20,6 @@ The simplest possible web application for activity tracking.
 - **Frontend**: React, Bootstrap, ApexCharts
 - **Backend**: Node.js, Express
 - **Storage**: JSON files (session-isolated)
-- **Deployment**: PM2, Nginx, SSL
 
 ## Local Development
 ```bash

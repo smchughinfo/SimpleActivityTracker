@@ -4,7 +4,7 @@ const activityService = require('./services/activityService');
 const trackedActivityService = require('./services/trackedActivityService');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Parse JSON bodies
 app.use(express.json());

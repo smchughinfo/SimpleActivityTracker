@@ -1,0 +1,16 @@
+# Claude Configuration
+# This file configures Claude Code for the SAT project
+
+# Project Context
+This is a Simple Activity Tracker (SAT) web application that tracks user activities with timestamps and categories.
+
+# Development Commands
+# Backend commands will be added as we implement the Node.js/PostgreSQL backend
+npm run dev
+npm run build
+npm run lint
+npm run test
+
+# Database commands (to be implemented)
+npm run db:migrate
+npm run db:seed

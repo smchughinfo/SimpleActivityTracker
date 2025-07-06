@@ -1,17 +1,10 @@
 const express = require('express');
 const path = require('path');
+const activityService = require('./services/activityService');
+const trackedActivityService = require('./services/trackedActivityService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-let trackedActivities = [];
-let activities = [
-  { name: "Play with dog", tag: "Dog Watching"},
-  { name: "Stare at dog", tag: "Dog Watching"},
-  { name: "Pet dog", tag: "Dog Watching"},
-  { name: "Apple", tag: "Eating"},
-  { name: "Frosting", tag: "Eating"},
-];
 
 // Parse JSON bodies
 app.use(express.json());
@@ -21,22 +14,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API endpoints for activities
 app.get('/api/activities', (req, res) => {
-  res.json(activities);
+  res.json(activityService.getActivities());
 });
 
 app.post('/api/activities', (req, res) => {
   const activity = req.body;
-  activities.push(activity);
-  res.json(activity);
+  const result = activityService.addActivity(activity);
+  res.json(result);
 });
 
 app.delete('/api/activities/:name/:tag', (req, res) => {
   const name = decodeURIComponent(req.params.name);
   const tag = decodeURIComponent(req.params.tag);
-  const index = activities.findIndex(activity => activity.name === name && activity.tag === tag);
+  const deleted = activityService.deleteActivity(name, tag);
   
-  if (index !== -1) {
-    const deleted = activities.splice(index, 1)[0];
+  if (deleted) {
     res.json(deleted);
   } else {
     res.status(404).json({ error: 'Activity not found' });
@@ -44,31 +36,26 @@ app.delete('/api/activities/:name/:tag', (req, res) => {
 });
 
 app.put('/api/activities', (req, res) => {
-  activities = req.body;
-  res.json(activities);
+  const result = activityService.setActivities(req.body);
+  res.json(result);
 });
 
 // API endpoints for tracked activities
 app.get('/api/tracked-activities', (req, res) => {
-  res.json(trackedActivities);
+  res.json(trackedActivityService.getTrackedActivities());
 });
 
 app.post('/api/tracked-activities', (req, res) => {
   const trackedActivity = req.body;
-  trackedActivities.push(trackedActivity);
-  
-  // Sort by activityTime descending (same as original logic)
-  trackedActivities.sort((a, b) => b.activityTime - a.activityTime);
-  
-  res.json(trackedActivity);
+  const result = trackedActivityService.addTrackedActivity(trackedActivity);
+  res.json(result);
 });
 
 app.delete('/api/tracked-activities/:logTime', (req, res) => {
   const logTime = parseInt(req.params.logTime);
-  const index = trackedActivities.findIndex(activity => activity.logTime === logTime);
+  const deleted = trackedActivityService.deleteTrackedActivity(logTime);
   
-  if (index !== -1) {
-    const deleted = trackedActivities.splice(index, 1)[0];
+  if (deleted) {
     res.json(deleted);
   } else {
     res.status(404).json({ error: 'Activity not found' });
@@ -76,8 +63,8 @@ app.delete('/api/tracked-activities/:logTime', (req, res) => {
 });
 
 app.put('/api/tracked-activities', (req, res) => {
-  trackedActivities = req.body;
-  res.json(trackedActivities);
+  const result = trackedActivityService.setTrackedActivities(req.body);
+  res.json(result);
 });
 
 // Serve the main HTML file

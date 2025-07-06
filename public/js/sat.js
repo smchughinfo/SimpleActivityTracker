@@ -182,7 +182,12 @@ function TrackedActivityListItem(props) {
 }
 
 function TrackedActivityList(props) {
-  React.useEffect(chartManager.createOrUpdateChart);
+  React.useEffect(() => {
+    // Only create/update chart if we have data or need to initialize
+    if (props.trackedActivities.length > 0 || !window.chart) {
+      chartManager.createOrUpdateChart();
+    }
+  }, [props.trackedActivities]); // Only update when tracked activities change
 
   async function copyActivityLogToClipboard() {
     var activitiesLog = await activityStorageManager.toString();
@@ -364,10 +369,23 @@ var chartManager = (function() {
     return result;
   }
 
+  var isCreatingChart = false;
+  
   async function createChart() {
-    var options = await getChartOptions();
-    window.chart = new ApexCharts(document.querySelector("#myChart"), options);
-    chart.render();
+    // Guard against double creation - check both chart existence and creation flag
+    if (window.chart || isCreatingChart) {
+      return;
+    }
+    
+    isCreatingChart = true; // Set flag immediately to prevent race conditions
+    
+    try {
+      var options = await getChartOptions();
+      window.chart = new ApexCharts(document.querySelector("#myChart"), options);
+      chart.render();
+    } finally {
+      isCreatingChart = false; // Reset flag when done
+    }
   }
 
    async function updateChart() {

@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const SESSIONS_DIR = path.join(__dirname, '..', 'Sessions');
+const MAX_SESSIONS = 100;
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
 const DEFAULT_ACTIVITIES = [
   { name: "Play with dog", tag: "Dog Watching"},
   { name: "Stare at dog", tag: "Dog Watching"},
@@ -13,6 +16,35 @@ const DEFAULT_ACTIVITIES = [
 
 function getFilePath(sessionId) {
   return path.join(SESSIONS_DIR, `activities-${sessionId || 'null'}.json`);
+}
+
+function checkSessionLimit() {
+  try {
+    if (!fs.existsSync(SESSIONS_DIR)) {
+      return; // No sessions directory yet, so we're good
+    }
+    
+    const files = fs.readdirSync(SESSIONS_DIR);
+    const sessionFiles = files.filter(f => f.startsWith('activities-') && f.endsWith('.json'));
+    
+    if (sessionFiles.length >= MAX_SESSIONS) {
+      throw new Error('Maximum number of sessions reached. Please try again later.');
+    }
+  } catch (error) {
+    if (error.message.includes('Maximum number of sessions')) {
+      throw error;
+    }
+    // If we can't read directory, just continue (don't block on filesystem errors)
+  }
+}
+
+function checkFileSize(data) {
+  const jsonString = JSON.stringify(data, null, 2);
+  const sizeInBytes = Buffer.byteLength(jsonString, 'utf8');
+  
+  if (sizeInBytes > MAX_FILE_SIZE) {
+    throw new Error('Session data too large. Please delete some activities.');
+  }
 }
 
 function getActivities(sessionId) {
@@ -36,6 +68,12 @@ function saveActivities(sessionId, activities) {
   const filePath = getFilePath(sessionId);
   
   try {
+    // Check abuse limits before saving
+    if (sessionId && sessionId !== 'null') {
+      checkSessionLimit();
+      checkFileSize(activities);
+    }
+    
     // Ensure Sessions directory exists
     if (!fs.existsSync(SESSIONS_DIR)) {
       fs.mkdirSync(SESSIONS_DIR, { recursive: true });

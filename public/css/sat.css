@@ -1,0 +1,56 @@
+#activityTabs {
+    padding-top: 1em;
+    margin-top: 1em;
+}
+#buttonShowAddActivity {
+    position: absolute;
+    right: 1em;
+    top: 10px;
+}
+.nav-tabs {
+    padding-right: 180px;
+}
+.activity {
+    margin: .5em;
+}
+
+#tMinusHours, #tMinusMinutes {
+    width: 50px;
+    display: inline-block;
+    margin-left: 15px;
+    margin-right: 5px;
+}
+
+.quick-t {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.delete-activity-button,
+.delete-tracked-activity-button {
+    margin-left: 1em;
+    transform: scale(.75);
+}
+
+.text-log {
+    max-height: 1000px;
+    overflow-x: auto;
+    overflow-y: scroll;
+}
+
+.apexcharts-tooltip-z-group {
+    display: none;
+}
+
+.nav-tabs {
+    min-height: 41px;
+}
+
+
+
+
+
+
+#chartContainer {
+    height: 300px; width: 100%;
+}

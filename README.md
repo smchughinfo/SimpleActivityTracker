@@ -4,9 +4,8 @@ The simplest possible web application for activity tracking.
 
 ## [www.simpleactivitytracker.app](https://www.simpleactivitytracker.app)
 
-<hr>
 
-![Resume 1](/Documentation/view-activities.png)
+![View Activities](/Documentation/view-activities.png)
 
 ## Features
 - **Activity Management**: Add/remove activities with custom tags

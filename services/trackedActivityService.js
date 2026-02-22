@@ -1,108 +1,95 @@
-// Tracked Activity Service - manages tracked activities data with JSON file persistence
-const fs = require('fs');
-const path = require('path');
+// Tracked Activity Service - manages tracked activities data with Azure Blob Storage persistence
+const { BlobServiceClient } = require('@azure/storage-blob');
 
-const SESSIONS_DIR = path.join(__dirname, '..', 'Sessions');
+const CONTAINER_NAME = 'sat-sessions';
 const MAX_SESSIONS = 100;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-function getFilePath(sessionId) {
-  return path.join(SESSIONS_DIR, `tracked-activities-${sessionId || 'null'}.json`);
+function getContainerClient() {
+  const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+  return blobServiceClient.getContainerClient(CONTAINER_NAME);
 }
 
-function checkSessionLimit() {
-  try {
-    if (!fs.existsSync(SESSIONS_DIR)) {
-      return; // No sessions directory yet, so we're good
-    }
-    
-    const files = fs.readdirSync(SESSIONS_DIR);
-    const sessionFiles = files.filter(f => f.startsWith('tracked-activities-') && f.endsWith('.json'));
-    
-    if (sessionFiles.length >= MAX_SESSIONS) {
+function getBlobName(sessionId) {
+  return `tracked-activities-${sessionId || 'null'}.json`;
+}
+
+async function checkSessionLimit() {
+  const containerClient = getContainerClient();
+  let count = 0;
+  for await (const blob of containerClient.listBlobsFlat({ prefix: 'tracked-activities-' })) {
+    count++;
+    if (count >= MAX_SESSIONS) {
       throw new Error('Maximum number of sessions reached. Please try again later.');
     }
-  } catch (error) {
-    if (error.message.includes('Maximum number of sessions')) {
-      throw error;
-    }
-    // If we can't read directory, just continue (don't block on filesystem errors)
   }
 }
 
 function checkFileSize(data) {
   const jsonString = JSON.stringify(data, null, 2);
   const sizeInBytes = Buffer.byteLength(jsonString, 'utf8');
-  
   if (sizeInBytes > MAX_FILE_SIZE) {
     throw new Error('Session data too large. Please delete some activities.');
   }
 }
 
-function getTrackedActivities(sessionId) {
-  const filePath = getFilePath(sessionId);
-  
+async function getTrackedActivities(sessionId) {
+  const containerClient = getContainerClient();
+  const blobClient = containerClient.getBlockBlobClient(getBlobName(sessionId));
   try {
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf8');
-      return JSON.parse(data);
-    } else {
-      // Return empty array for new sessions
-      return [];
+    const download = await blobClient.download(0);
+    const chunks = [];
+    for await (const chunk of download.readableStreamBody) {
+      chunks.push(chunk);
     }
+    return JSON.parse(Buffer.concat(chunks).toString());
   } catch (error) {
+    if (error.statusCode === 404) return [];
     console.error('Error reading tracked activities:', error);
     return [];
   }
 }
 
-function saveTrackedActivities(sessionId, trackedActivities) {
-  const filePath = getFilePath(sessionId);
-  
+async function saveTrackedActivities(sessionId, trackedActivities) {
   try {
-    // Check abuse limits before saving
     if (sessionId && sessionId !== 'null') {
-      checkSessionLimit();
+      await checkSessionLimit();
       checkFileSize(trackedActivities);
     }
-    
-    // Ensure Sessions directory exists
-    if (!fs.existsSync(SESSIONS_DIR)) {
-      fs.mkdirSync(SESSIONS_DIR, { recursive: true });
-    }
-    
-    fs.writeFileSync(filePath, JSON.stringify(trackedActivities, null, 2));
+    const containerClient = getContainerClient();
+    const blobClient = containerClient.getBlockBlobClient(getBlobName(sessionId));
+    const content = JSON.stringify(trackedActivities, null, 2);
+    await blobClient.upload(content, Buffer.byteLength(content), {
+      blobHTTPHeaders: { blobContentType: 'application/json' },
+      overwrite: true
+    });
   } catch (error) {
     console.error('Error saving tracked activities:', error);
     throw error;
   }
 }
 
-function addTrackedActivity(sessionId, trackedActivity) {
-  const trackedActivities = getTrackedActivities(sessionId);
+async function addTrackedActivity(sessionId, trackedActivity) {
+  const trackedActivities = await getTrackedActivities(sessionId);
   trackedActivities.push(trackedActivity);
-  
-  // Sort by activityTime descending (same as original logic)
   trackedActivities.sort((a, b) => b.activityTime - a.activityTime);
-  
-  saveTrackedActivities(sessionId, trackedActivities);
+  await saveTrackedActivities(sessionId, trackedActivities);
   return trackedActivity;
 }
 
-function deleteTrackedActivity(sessionId, logTime) {
-  const trackedActivities = getTrackedActivities(sessionId);
-  const index = trackedActivities.findIndex(activity => activity.logTime === logTime);
-  
+async function deleteTrackedActivity(sessionId, logTime) {
+  const trackedActivities = await getTrackedActivities(sessionId);
+  const index = trackedActivities.findIndex(a => a.logTime === logTime);
   if (index !== -1) {
     const deleted = trackedActivities.splice(index, 1)[0];
-    saveTrackedActivities(sessionId, trackedActivities);
+    await saveTrackedActivities(sessionId, trackedActivities);
     return deleted;
   }
   return null;
 }
 
-function setTrackedActivities(sessionId, newTrackedActivities) {
-  saveTrackedActivities(sessionId, newTrackedActivities);
+async function setTrackedActivities(sessionId, newTrackedActivities) {
+  await saveTrackedActivities(sessionId, newTrackedActivities);
   return newTrackedActivities;
 }
 

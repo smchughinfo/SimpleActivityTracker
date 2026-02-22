@@ -13,70 +13,96 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API endpoints for activities
-app.get('/api/activities', (req, res) => {
-  const sessionId = req.query.sessionId;
-  res.json(activityService.getActivities(sessionId));
-});
-
-app.post('/api/activities', (req, res) => {
-  const sessionId = req.body.sessionId;
-  const activity = req.body;
-  delete activity.sessionId; // Remove sessionId from activity data
-  const result = activityService.addActivity(sessionId, activity);
-  res.json(result);
-});
-
-app.delete('/api/activities/:name/:tag', (req, res) => {
-  const name = decodeURIComponent(req.params.name);
-  const tag = decodeURIComponent(req.params.tag);
-  const sessionId = req.query.sessionId;
-  const deleted = activityService.deleteActivity(sessionId, name, tag);
-  
-  if (deleted) {
-    res.json(deleted);
-  } else {
-    res.status(404).json({ error: 'Activity not found' });
+app.get('/api/activities', async (req, res) => {
+  try {
+    const sessionId = req.query.sessionId;
+    res.json(await activityService.getActivities(sessionId));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.put('/api/activities', (req, res) => {
-  const sessionId = req.body.sessionId;
-  const activities = req.body.activities || req.body; // Support both formats
-  const result = activityService.setActivities(sessionId, activities);
-  res.json(result);
+app.post('/api/activities', async (req, res) => {
+  try {
+    const sessionId = req.body.sessionId;
+    const activity = req.body;
+    delete activity.sessionId;
+    res.json(await activityService.addActivity(sessionId, activity));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/activities/:name/:tag', async (req, res) => {
+  try {
+    const name = decodeURIComponent(req.params.name);
+    const tag = decodeURIComponent(req.params.tag);
+    const sessionId = req.query.sessionId;
+    const deleted = await activityService.deleteActivity(sessionId, name, tag);
+    if (deleted) {
+      res.json(deleted);
+    } else {
+      res.status(404).json({ error: 'Activity not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/activities', async (req, res) => {
+  try {
+    const sessionId = req.body.sessionId;
+    const activities = req.body.activities || req.body;
+    res.json(await activityService.setActivities(sessionId, activities));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API endpoints for tracked activities
-app.get('/api/tracked-activities', (req, res) => {
-  const sessionId = req.query.sessionId;
-  res.json(trackedActivityService.getTrackedActivities(sessionId));
-});
-
-app.post('/api/tracked-activities', (req, res) => {
-  const sessionId = req.body.sessionId;
-  const trackedActivity = req.body;
-  delete trackedActivity.sessionId; // Remove sessionId from activity data
-  const result = trackedActivityService.addTrackedActivity(sessionId, trackedActivity);
-  res.json(result);
-});
-
-app.delete('/api/tracked-activities/:logTime', (req, res) => {
-  const logTime = parseInt(req.params.logTime);
-  const sessionId = req.query.sessionId;
-  const deleted = trackedActivityService.deleteTrackedActivity(sessionId, logTime);
-  
-  if (deleted) {
-    res.json(deleted);
-  } else {
-    res.status(404).json({ error: 'Activity not found' });
+app.get('/api/tracked-activities', async (req, res) => {
+  try {
+    const sessionId = req.query.sessionId;
+    res.json(await trackedActivityService.getTrackedActivities(sessionId));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.put('/api/tracked-activities', (req, res) => {
-  const sessionId = req.body.sessionId;
-  const trackedActivities = req.body.trackedActivities || req.body; // Support both formats
-  const result = trackedActivityService.setTrackedActivities(sessionId, trackedActivities);
-  res.json(result);
+app.post('/api/tracked-activities', async (req, res) => {
+  try {
+    const sessionId = req.body.sessionId;
+    const trackedActivity = req.body;
+    delete trackedActivity.sessionId;
+    res.json(await trackedActivityService.addTrackedActivity(sessionId, trackedActivity));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/tracked-activities/:logTime', async (req, res) => {
+  try {
+    const logTime = parseInt(req.params.logTime);
+    const sessionId = req.query.sessionId;
+    const deleted = await trackedActivityService.deleteTrackedActivity(sessionId, logTime);
+    if (deleted) {
+      res.json(deleted);
+    } else {
+      res.status(404).json({ error: 'Activity not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/tracked-activities', async (req, res) => {
+  try {
+    const sessionId = req.body.sessionId;
+    const trackedActivities = req.body.trackedActivities || req.body;
+    res.json(await trackedActivityService.setTrackedActivities(sessionId, trackedActivities));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Serve the main HTML file

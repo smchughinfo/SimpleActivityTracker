@@ -6,8 +6,19 @@ const trackedActivityService = require('./services/trackedActivityService');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// CORS
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 // Parse JSON bodies
 app.use(express.json());
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));

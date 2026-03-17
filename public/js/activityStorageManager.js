@@ -2,7 +2,7 @@ var activityStorageManager = (function() {
   async function getActivities() {
     try {
       const sessionId = sessionManager.getSessionId();
-      const url = sessionId ? `/api/activities?sessionId=${sessionId}` : '/api/activities';
+      const url = sessionId ? `${API_BASE}/api/activities?sessionId=${sessionId}` : `${API_BASE}/api/activities`;
       const response = await fetch(url);
       const data = await response.json();
       return data;
@@ -16,7 +16,7 @@ var activityStorageManager = (function() {
     try {
       const sessionId = sessionManager.ensureSessionId();
       const payload = { ...activity, sessionId };
-      const response = await fetch('/api/activities', {
+      const response = await fetch(`${API_BASE}/api/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ var activityStorageManager = (function() {
     try {
       const sessionId = sessionManager.ensureSessionId();
       const payload = { activities, sessionId };
-      const response = await fetch('/api/activities', {
+      const response = await fetch(`${API_BASE}/api/activities`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -53,9 +53,9 @@ var activityStorageManager = (function() {
   async function deleteActivity(activity) {
     try {
       const sessionId = sessionManager.ensureSessionId();
-      const url = sessionId ? 
-        `/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}?sessionId=${sessionId}` :
-        `/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}`;
+      const url = sessionId ?
+        `${API_BASE}/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}?sessionId=${sessionId}` :
+        `${API_BASE}/api/activities/${encodeURIComponent(activity.name)}/${encodeURIComponent(activity.tag)}`;
       const response = await fetch(url, {
         method: 'DELETE'
       });

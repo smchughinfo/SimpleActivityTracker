@@ -2,7 +2,7 @@ var trackedActivityStorageManager = (function() {
   async function getTrackedActivities() {
     try {
       const sessionId = sessionManager.getSessionId();
-      const url = sessionId ? `/api/tracked-activities?sessionId=${sessionId}` : '/api/tracked-activities';
+      const url = sessionId ? `${API_BASE}/api/tracked-activities?sessionId=${sessionId}` : `${API_BASE}/api/tracked-activities`;
       const response = await fetch(url);
       const data = await response.json();
       return data;
@@ -16,7 +16,7 @@ var trackedActivityStorageManager = (function() {
     try {
       const sessionId = sessionManager.ensureSessionId();
       const payload = { ...trackedActivity, sessionId };
-      const response = await fetch('/api/tracked-activities', {
+      const response = await fetch(`${API_BASE}/api/tracked-activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ var trackedActivityStorageManager = (function() {
     try {
       const sessionId = sessionManager.ensureSessionId();
       const payload = { trackedActivities, sessionId };
-      const response = await fetch('/api/tracked-activities', {
+      const response = await fetch(`${API_BASE}/api/tracked-activities`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -53,9 +53,9 @@ var trackedActivityStorageManager = (function() {
   async function deleteTrackedActivity(trackedActivity) {
     try {
       const sessionId = sessionManager.ensureSessionId();
-      const url = sessionId ? 
-        `/api/tracked-activities/${trackedActivity.logTime}?sessionId=${sessionId}` :
-        `/api/tracked-activities/${trackedActivity.logTime}`;
+      const url = sessionId ?
+        `${API_BASE}/api/tracked-activities/${trackedActivity.logTime}?sessionId=${sessionId}` :
+        `${API_BASE}/api/tracked-activities/${trackedActivity.logTime}`;
       const response = await fetch(url, {
         method: 'DELETE'
       });

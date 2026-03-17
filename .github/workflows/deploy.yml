@@ -44,6 +44,7 @@ jobs:
             --username smchughinfo \
             --password ${{ secrets.GHCR_PAT }}
           az containerapp update \
+            --revision-suffix "${GITHUB_SHA::8}" \
             --name vibes-sat \
             --resource-group seanmchugh-hub \
             --image ghcr.io/smchughinfo/vibes-sat:latest
